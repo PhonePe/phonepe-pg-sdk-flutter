@@ -25,5 +25,5 @@ Please refer the above doc for step by step integration.
 #### For any queries, Please contact us at : merchant-pgsupport@phonepe.com
 
 
-##### Note: To run the sample app, you need to add your encrypted keys. Please contact with the integration team to generate your credientails for testing the payments flow. 
+##### Note: To run the sample app, you need to add your encrypted keys. Please contact with the integration team to generate your credentials for testing the payment flow.
 
