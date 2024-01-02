@@ -22,23 +22,13 @@ class MerchantScreen extends State<MerchantApp> {
   String checksum = "";
 
   Map<String, String> headers = {};
-  Map<String, String> pgHeaders = {"Content-Type": "application/json"};
-  List<String> apiList = <String>['Container', 'PG'];
-  List<String> environmentList = <String>['UAT', 'UAT_SIM', 'PRODUCTION'];
-  String apiEndPoint = "/pg/v1/pay";
+  List<String> environmentList = <String>['SANDBOX', 'PRODUCTION'];
   bool enableLogs = true;
   Object? result;
-  String dropdownValue = 'PG';
-  String environmentValue = 'UAT_SIM';
+  String environmentValue = 'SANDBOX';
   String appId = "";
   String merchantId = "";
   String packageName = "com.phonepe.simulator";
-
-  void startTransaction() {
-    dropdownValue == 'Container'
-        ? startContainerTransaction()
-        : startPGTransaction();
-  }
 
   void initPhonePeSdk() {
     PhonePePaymentSdk.init(environmentValue, appId, merchantId, enableLogs)
@@ -107,23 +97,28 @@ class MerchantScreen extends State<MerchantApp> {
     }
   }
 
-  void getInstalledUpiAppsForAndroid() {
-    if (Platform.isAndroid) {
-      PhonePePaymentSdk.getInstalledUpiAppsForAndroid()
+  void getInstalledUpiAppsForiOS() {
+    if (Platform.isIOS) {
+      PhonePePaymentSdk.getInstalledUpiAppsForiOS()
           .then((apps) => {
                 setState(() {
-                  if (apps != null) {
-                    Iterable l = json.decode(apps);
-                    List<UPIApp> upiApps = List<UPIApp>.from(
-                        l.map((model) => UPIApp.fromJson(model)));
-                    String appString = '';
-                    for (var element in upiApps) {
-                      appString +=
-                          "${element.applicationName} ${element.version} ${element.packageName}";
-                    }
-                    result = 'Installed Upi Apps - $appString';
+                  result = 'getUPIAppsInstalledForIOS - $apps';
+
+                  // For Usage
+                  List<String> stringList = apps
+                          ?.whereType<
+                              String>() // Filters out null and non-String elements
+                          .toList() ??
+                      [];
+
+                  // Check if the string value 'Orange' exists in the filtered list
+                  String searchString = 'PHONEPE';
+                  bool isStringExist = stringList.contains(searchString);
+
+                  if (isStringExist) {
+                    print('$searchString app exist in the device.');
                   } else {
-                    result = 'Installed Upi Apps - 0';
+                    print('$searchString app does not exist in the list.');
                   }
                 })
               })
@@ -134,10 +129,42 @@ class MerchantScreen extends State<MerchantApp> {
     }
   }
 
-  void startPGTransaction() async {
+  void getInstalledApps() {
+    if (Platform.isAndroid) {
+      getInstalledUpiAppsForAndroid();
+    } else {
+      getInstalledUpiAppsForiOS();
+    }
+  }
+
+  void getInstalledUpiAppsForAndroid() {
+    PhonePePaymentSdk.getInstalledUpiAppsForAndroid()
+        .then((apps) => {
+              setState(() {
+                if (apps != null) {
+                  Iterable l = json.decode(apps);
+                  List<UPIApp> upiApps = List<UPIApp>.from(
+                      l.map((model) => UPIApp.fromJson(model)));
+                  String appString = '';
+                  for (var element in upiApps) {
+                    appString +=
+                        "${element.applicationName} ${element.version} ${element.packageName}";
+                  }
+                  result = 'Installed Upi Apps - $appString';
+                } else {
+                  result = 'Installed Upi Apps - 0';
+                }
+              })
+            })
+        .catchError((error) {
+      handleError(error);
+      return <dynamic>{};
+    });
+  }
+
+  void startTransaction() async {
     try {
-      PhonePePaymentSdk.startPGTransaction(
-              body, callback, checksum, pgHeaders, apiEndPoint, packageName)
+      PhonePePaymentSdk.startTransaction(body, callback, checksum, packageName)
           .then((response) => {
                 setState(() {
                   if (response != null) {
@@ -171,35 +198,6 @@ class MerchantScreen extends State<MerchantApp> {
         result = {"error": error};
       }
     });
-  }
-
-  void startContainerTransaction() async {
-    try {
-      PhonePePaymentSdk.startContainerTransaction(
-              body, callback, checksum, headers, apiEndPoint)
-          .then((response) => {
-                setState(() {
-                  if (response != null) {
-                    String status = response['status'].toString();
-                    String error = response['error'].toString();
-                    if (status == 'SUCCESS') {
-                      result = "Flow Completed - Status: Success!";
-                    } else {
-                      result =
-                          "Flow Completed - Status: $status and Error: $error";
-                    }
-                  } else {
-                    result = "Flow Incomplete";
-                  }
-                })
-              })
-          .catchError((error) {
-        handleError(error);
-        return <dynamic>{};
-      });
-    } catch (error) {
-      result = {"error": error};
-    }
   }
 
   @override
@@ -249,9 +247,7 @@ class MerchantScreen extends State<MerchantApp> {
                             environmentValue = value!;
                             if (environmentValue == 'PRODUCTION') {
                               packageName = "com.phonepe.app";
-                            } else if (environmentValue == 'UAT') {
-                              packageName = "com.phonepe.app.preprod";
-                            } else if (environmentValue == 'UAT_SIM') {
+                            } else if (environmentValue == 'SANDBOX') {
                               packageName = "com.phonepe.simulator";
                             }
                           });
@@ -295,7 +291,6 @@ class MerchantScreen extends State<MerchantApp> {
                     'Warning: Init SDK is Mandatory to use all the functionalities*',
                     style: TextStyle(color: Colors.red),
                   ),
-
                   ElevatedButton(
                       onPressed: initPhonePeSdk, child: const Text('INIT SDK')),
                   const SizedBox(width: 5.0),
@@ -319,39 +314,6 @@ class MerchantScreen extends State<MerchantApp> {
                     },
                   ),
                   const SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: <Widget>[
-                      const Text('Select the transaction type'),
-                      DropdownButton<String>(
-                        value: dropdownValue,
-                        icon: const Icon(Icons.arrow_downward),
-                        elevation: 16,
-                        underline: Container(
-                          height: 2,
-                          color: Colors.black,
-                        ),
-                        onChanged: (String? value) {
-                          // This is called when the user selects an item.
-                          setState(() {
-                            dropdownValue = value!;
-                            if (dropdownValue == 'PG') {
-                              apiEndPoint = "/pg/v1/pay";
-                            } else {
-                              apiEndPoint = "/v4/debit";
-                            }
-                          });
-                        },
-                        items: apiList
-                            .map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                      )
-                    ],
-                  ),
                   ElevatedButton(
                       onPressed: startTransaction,
                       child: const Text('Start Transaction')),
@@ -373,6 +335,10 @@ class MerchantScreen extends State<MerchantApp> {
                                 onPressed: isPaytmInstalled,
                                 child: const Text('Paytm App'))),
                       ]),
+                  ElevatedButton(
+                      onPressed: getInstalledApps,
+                      child: const Text('Get UPI Apps')),
+                  const SizedBox(width: 5.0),
                   Visibility(
                       maintainSize: false,
                       maintainAnimation: false,
@@ -386,12 +352,7 @@ class MerchantScreen extends State<MerchantApp> {
                                     onPressed: getPackageSignatureForAndroid,
                                     child:
                                         const Text('Get Package Signature'))),
-                            const SizedBox(width: 5.0),
-                            Expanded(
-                                child: ElevatedButton(
-                                    onPressed: getInstalledUpiAppsForAndroid,
-                                    child: const Text('Get UPI Apps'))),
-                            const SizedBox(width: 5.0),
+                            const SizedBox(width: 5.0)
                           ])),
                   Text("Result: \n $result")
                 ],
