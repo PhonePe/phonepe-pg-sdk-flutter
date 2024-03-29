@@ -1,30 +1,16 @@
-# Flutter PhonePe Payment SDK
+# Sample App
+Sample App to demonstrate the integration of PhonePe PG SDK Flutter package.
 
-A Sample App to test the Plugin and use in your flutter project
-
-# Getting Started
-
-
-```
-flutter pub get
-```
-
-# Run the Flutter App to test the plugin in android and iOS apps.
-
-```
-flutter run
-```
-
-
-
-### Integration Doc : 
-https://developer.phonepe.com/v1/docs/flutter-sdk-integration
-
-Please refer the above doc for step by step integration.
+To know about the integration steps, please visit the Dev Docs : [PhonePe Developer Docs](https://developer.phonepe.com/v1/docs/react-native-sdk-integration-standard).
 
 > [!NOTE]
-> To run the sample app, you must add your encrypted keys. Please get in touch with the ```PhonePe integration team```(merchant-integration@phonepe.com) to generate your credentials for testing the payment flow.
+> Please get in touch with the ```PhonePe integration team``` (merchant-integration@phonepe.com) to get your secret keys and to know about how to use this app.
 
-> [!WARNING]
-> Without valid credentials this sample app wouldn't work.
+> [!WARNING]  
+> Without valid input this sample app will not work.
 
+Pull dependencies and run the project:
+```
+flutter pub get
+flutter run
+```
