@@ -17,21 +17,20 @@ class MerchantApp extends StatefulWidget {
 }
 
 class MerchantScreen extends State<MerchantApp> {
-  String body = "";
-  String callback = "flutterDemoApp";
-  String checksum = "";
+  String request = "";
+  String appSchema = "flutterDemoApp";
 
   Map<String, String> headers = {};
   List<String> environmentList = <String>['SANDBOX', 'PRODUCTION'];
   bool enableLogs = true;
   Object? result;
   String environmentValue = 'SANDBOX';
-  String appId = "";
   String merchantId = "";
+  String flowId = ""; // Pass the user id or the unique string
   String packageName = "com.phonepe.simulator";
 
   void initPhonePeSdk() {
-    PhonePePaymentSdk.init(environmentValue, appId, merchantId, enableLogs)
+    PhonePePaymentSdk.init(environmentValue, merchantId, flowId, enableLogs)
         .then((isInitialized) => {
               setState(() {
                 result = 'PhonePe SDK Initialized - $isInitialized';
@@ -43,128 +42,9 @@ class MerchantScreen extends State<MerchantApp> {
     });
   }
 
-  void isPhonePeInstalled() {
-    PhonePePaymentSdk.isPhonePeInstalled()
-        .then((isPhonePeInstalled) => {
-              setState(() {
-                result = 'PhonePe Installed - $isPhonePeInstalled';
-              })
-            })
-        .catchError((error) {
-      handleError(error);
-      return <dynamic>{};
-    });
-  }
-
-  void isGpayInstalled() {
-    PhonePePaymentSdk.isGPayAppInstalled()
-        .then((isGpayInstalled) => {
-              setState(() {
-                result = 'GPay Installed - $isGpayInstalled';
-              })
-            })
-        .catchError((error) {
-      handleError(error);
-      return <dynamic>{};
-    });
-  }
-
-  void isPaytmInstalled() {
-    PhonePePaymentSdk.isPaytmAppInstalled()
-        .then((isPaytmInstalled) => {
-              setState(() {
-                result = 'Paytm Installed - $isPaytmInstalled';
-              })
-            })
-        .catchError((error) {
-      handleError(error);
-      return <dynamic>{};
-    });
-  }
-
-  void getPackageSignatureForAndroid() {
-    if (Platform.isAndroid) {
-      PhonePePaymentSdk.getPackageSignatureForAndroid()
-          .then((packageSignature) => {
-                setState(() {
-                  result = 'getPackageSignatureForAndroid - $packageSignature';
-                })
-              })
-          .catchError((error) {
-        handleError(error);
-        return <dynamic>{};
-      });
-    }
-  }
-
-  void getInstalledUpiAppsForiOS() {
-    if (Platform.isIOS) {
-      PhonePePaymentSdk.getInstalledUpiAppsForiOS()
-          .then((apps) => {
-                setState(() {
-                  result = 'getUPIAppsInstalledForIOS - $apps';
-
-                  // For Usage
-                  List<String> stringList = apps
-                          ?.whereType<
-                              String>() // Filters out null and non-String elements
-                          .toList() ??
-                      [];
-
-                  // Check if the string value 'Orange' exists in the filtered list
-                  String searchString = 'PHONEPE';
-                  bool isStringExist = stringList.contains(searchString);
-
-                  if (isStringExist) {
-                    print('$searchString app exist in the device.');
-                  } else {
-                    print('$searchString app does not exist in the list.');
-                  }
-                })
-              })
-          .catchError((error) {
-        handleError(error);
-        return <dynamic>{};
-      });
-    }
-  }
-
-  void getInstalledApps() {
-    if (Platform.isAndroid) {
-      getInstalledUpiAppsForAndroid();
-    } else {
-      getInstalledUpiAppsForiOS();
-    }
-  }
-
-  void getInstalledUpiAppsForAndroid() {
-    PhonePePaymentSdk.getInstalledUpiAppsForAndroid()
-        .then((apps) => {
-              setState(() {
-                if (apps != null) {
-                  Iterable l = json.decode(apps);
-                  List<UPIApp> upiApps = List<UPIApp>.from(
-                      l.map((model) => UPIApp.fromJson(model)));
-                  String appString = '';
-                  for (var element in upiApps) {
-                    appString +=
-                        "${element.applicationName} ${element.version} ${element.packageName}";
-                  }
-                  result = 'Installed Upi Apps - $appString';
-                } else {
-                  result = 'Installed Upi Apps - 0';
-                }
-              })
-            })
-        .catchError((error) {
-      handleError(error);
-      return <dynamic>{};
-    });
-  }
-
   void startTransaction() async {
     try {
-      PhonePePaymentSdk.startTransaction(body, callback, checksum, packageName)
+      PhonePePaymentSdk.startTransaction(request, appSchema)
           .then((response) => {
                 setState(() {
                   if (response != null) {
@@ -188,6 +68,69 @@ class MerchantScreen extends State<MerchantApp> {
     } catch (error) {
       handleError(error);
     }
+  }
+
+  void getInstalledUpiAppsForiOS() {
+    PhonePePaymentSdk.getInstalledUpiAppsForiOS()
+        .then((apps) => {
+              setState(() {
+                result = 'getUPIAppsInstalledForIOS - $apps';
+
+                // For Usage
+                List<String> stringList = apps
+                        ?.whereType<
+                            String>() // Filters out null and non-String elements
+                        .toList() ??
+                    [];
+
+                // Check if the string value 'Orange' exists in the filtered list
+                String searchString = 'PHONEPE';
+                bool isStringExist = stringList.contains(searchString);
+
+                if (isStringExist) {
+                  print('$searchString app exist in the device.');
+                } else {
+                  print('$searchString app does not exist in the list.');
+                }
+              })
+            })
+        .catchError((error) {
+      handleError(error);
+      return <dynamic>{};
+    });
+  }
+
+  void getInstalledApps() {
+    if (Platform.isAndroid) {
+      getInstalledUpiAppsForAndroid();
+    } else {
+      getInstalledUpiAppsForiOS();
+    }
+  }
+
+  void getInstalledUpiAppsForAndroid() {
+    PhonePePaymentSdk.getUpiAppsForAndroid()
+        .then((apps) => {
+              setState(() {
+                if (apps != null) {
+                  Iterable l = json.decode(apps);
+                  List<UPIApp> upiApps = List<UPIApp>.from(
+                      l.map((model) => UPIApp.fromJson(model)));
+                  String appString = '';
+                  for (var element in upiApps) {
+                    appString +=
+                        "${element.applicationName} ${element.version} ${element.packageName}";
+                  }
+                  result = 'Installed Upi Apps - $appString';
+                } else {
+                  result = 'Installed Upi Apps - 0';
+                }
+              })
+            })
+        .catchError((error) {
+      handleError(error);
+      return <dynamic>{};
+    });
   }
 
   void handleError(error) {
@@ -224,10 +167,10 @@ class MerchantScreen extends State<MerchantApp> {
                   TextField(
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
-                      hintText: 'App Id',
+                      hintText: 'Flow Id',
                     ),
                     onChanged: (text) {
-                      appId = text;
+                      flowId = text;
                     },
                   ),
                   Row(
@@ -297,63 +240,25 @@ class MerchantScreen extends State<MerchantApp> {
                   TextField(
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
-                      hintText: 'body',
+                      hintText: 'request',
                     ),
                     onChanged: (text) {
-                      body = text;
+                      request = text;
                     },
                   ),
                   const SizedBox(height: 10),
-                  TextField(
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: 'checksum',
-                    ),
-                    onChanged: (text) {
-                      checksum = text;
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  ElevatedButton(
-                      onPressed: startTransaction,
-                      child: const Text('Start Transaction')),
                   Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: <Widget>[
                         Expanded(
                             child: ElevatedButton(
-                                onPressed: isPhonePeInstalled,
-                                child: const Text('PhonePe App'))),
+                                onPressed: startTransaction,
+                                child: const Text('Start Transaction'))),
                         const SizedBox(width: 5.0),
-                        Expanded(
-                            child: ElevatedButton(
-                                onPressed: isGpayInstalled,
-                                child: const Text('Gpay App'))),
-                        const SizedBox(width: 5.0),
-                        Expanded(
-                            child: ElevatedButton(
-                                onPressed: isPaytmInstalled,
-                                child: const Text('Paytm App'))),
                       ]),
                   ElevatedButton(
                       onPressed: getInstalledApps,
-                      child: const Text('Get UPI Apps')),
-                  const SizedBox(width: 5.0),
-                  Visibility(
-                      maintainSize: false,
-                      maintainAnimation: false,
-                      maintainState: false,
-                      visible: Platform.isAndroid,
-                      child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: <Widget>[
-                            Expanded(
-                                child: ElevatedButton(
-                                    onPressed: getPackageSignatureForAndroid,
-                                    child:
-                                        const Text('Get Package Signature'))),
-                            const SizedBox(width: 5.0)
-                          ])),
+                      child: const Text('Get Installed Apps')),
                   Text("Result: \n $result")
                 ],
               ),
